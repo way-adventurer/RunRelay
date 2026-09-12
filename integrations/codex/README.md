@@ -7,7 +7,29 @@ It bundles:
 - a local MCP server exposing submit, list, status, wait, logs, and cancel tools;
 - a repo marketplace entry at `.agents/plugins/marketplace.json`.
 
-Install the project package first, then install the repo marketplace in Codex. Start a new Codex chat after installation so the bundled Skill and MCP tools are available. You can also explicitly invoke the plugin or skill with `@`.
+## 人工安装
+
+在仓库根目录打开终端，依次执行：
+
+    python -m pip install -e .
+    codex plugin marketplace add .
+    codex plugin add runrelay --marketplace personal
+
+执行 `codex plugin list` 确认 `runrelay@personal` 已安装并启用，然后新开一个 Codex 会话。
+
+## 直接交给 Codex
+
+下面的内容可以直接复制给 Codex：
+
+    请安装当前仓库里的 RunRelay Codex 插件并验证安装结果：
+    1. 确认当前目录是仓库根目录，并存在 plugins/runrelay 和 .agents/plugins/marketplace.json
+    2. 执行 python -m pip install -e .
+    3. 执行 codex plugin marketplace add .
+    4. 执行 codex plugin add runrelay --marketplace personal
+    5. 执行 codex plugin list，确认 runrelay@personal 已安装且启用
+    6. 不要启动、提交或取消实验，只验证安装；完成后提醒我新开 Codex 会话测试
+
+Start a new Codex chat after installation so the bundled Skill and MCP tools are available. You can also explicitly invoke the plugin or skill with `@`.
 
 Use RunRelay when a command is expected to run long enough that repeated polling would waste agent turns.
 

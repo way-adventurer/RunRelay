@@ -58,13 +58,35 @@ Read docs/codex-integration.md before enabling automated wake-up. RunRelay does 
 
 RunRelay includes an installable Codex plugin under `plugins/runrelay`. It adds a Skill that tells Codex when to use RunRelay and a local MCP server with structured tools for submit, list, status, wait, logs, and cancel.
 
-Install the Python package first, then add the repository's marketplace and install the plugin:
+### 人工安装
+
+在仓库根目录打开终端，依次执行：
 
     python -m pip install -e .
     codex plugin marketplace add .
     codex plugin add runrelay --marketplace personal
 
-Start a new Codex chat after installation. Codex can choose the plugin when a request clearly needs a long-running experiment, or you can explicitly invoke it with `@runrelay`/`@runrelay-experiments`. Mentioning RunRelay while asking a general question does not start a job; submission still requires a concrete command, host, work directory, and explicit run intent.
+然后执行 `codex plugin list`，确认 `runrelay@personal` 已安装并启用。安装完成后请新开一个 Codex 会话；插件提供的 Skill 和 MCP 工具会在新会话中生效。
+
+可以用下面这句话测试：
+
+    使用 RunRelay 提交一个本地 smoke test：执行 python -c "print('RunRelay works')"，等待完成并读取日志；不要使用远程 GPU。
+
+### 直接交给 Codex 的安装内容
+
+如果希望让另一个 Codex 会话代为安装，可以直接复制下面整段内容发送给它：
+
+    请把当前仓库里的 RunRelay Codex 插件安装到本机 Codex，并完成安装验证。
+
+    1. 确认当前目录是 RunRelay 仓库根目录，并且存在 plugins/runrelay 和 .agents/plugins/marketplace.json。
+    2. 执行：python -m pip install -e .
+    3. 执行：codex plugin marketplace add .
+    4. 执行：codex plugin add runrelay --marketplace personal
+    5. 执行：codex plugin list，确认 runrelay@personal 的 installed=true 且 enabled=true。
+    6. 只验证插件安装、Skill 和 MCP 入口，不要提交、启动或取消任何实验。
+    7. 返回安装结果；如果安装成功，提醒我新开一个 Codex 会话后再测试 RunRelay。
+
+安装后的使用边界：当用户明确要求后台运行、提交或监控长时间实验、训练、视频生成、评测、渲染、GPU 或 SSH 任务时，Codex 应优先使用 RunRelay；仅仅提到“RunRelay”不会自动启动任务。提交任务仍需要明确的命令、主机、工作目录和运行意图。
 
 ## Project status
 
