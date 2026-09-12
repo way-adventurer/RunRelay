@@ -54,6 +54,18 @@ The safe default is noop: completion is reported by runrelay wait, and no agent 
 
 Read docs/codex-integration.md before enabling automated wake-up. RunRelay does not claim that it can directly wake an arbitrary open Desktop conversation.
 
+## Codex plugin
+
+RunRelay includes an installable Codex plugin under `plugins/runrelay`. It adds a Skill that tells Codex when to use RunRelay and a local MCP server with structured tools for submit, list, status, wait, logs, and cancel.
+
+Install the Python package first, then add the repository's marketplace and install the plugin:
+
+    python -m pip install -e .
+    codex plugin marketplace add .
+    codex plugin add runrelay --marketplace personal
+
+Start a new Codex chat after installation. Codex can choose the plugin when a request clearly needs a long-running experiment, or you can explicitly invoke it with `@runrelay`/`@runrelay-experiments`. Mentioning RunRelay while asking a general question does not start a job; submission still requires a concrete command, host, work directory, and explicit run intent.
+
 ## Project status
 
 This is an early MVP. GPU sampling, artifact transfer, retries, and richer daemon/service installation are deliberately staged after the core lifecycle is proven. See docs/architecture.md and CHANGELOG.md.
@@ -61,4 +73,3 @@ This is an early MVP. GPU sampling, artifact transfer, retries, and richer daemo
 ## License
 
 MIT. See LICENSE.
-
