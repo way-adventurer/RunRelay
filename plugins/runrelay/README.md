@@ -16,6 +16,14 @@ Verify the installation:
 
 Confirm that `runrelay@personal` is installed and enabled, then start a new Codex chat before testing the plugin.
 
+## SSH host scope
+
+For one local installation serving many experiment servers, keep the Codex chat on the local machine and let RunRelay use the server's SSH alias as `host`. For example:
+
+    Use RunRelay to run `python train.py` on `gpu-183` in `/home/user/project`, then wait and read the logs.
+
+A Codex SSH remote-project chat runs with the remote host's own skills, MCP servers, and local tools. It does not inherit plugins installed on the local machine. Using that mode requires a separate plugin installation on the remote Codex environment; this is a Codex host boundary, not a missing RunRelay executable in the local installation.
+
 ## Copy-paste installation prompt for Codex
 
 The following prompt asks Codex to install and verify the plugin without starting an experiment:
