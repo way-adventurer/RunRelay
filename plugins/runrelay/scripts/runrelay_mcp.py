@@ -88,7 +88,7 @@ def _submit(args: dict[str, Any]) -> dict[str, Any]:
         name=args.get("name"),
         artifacts=args.get("artifacts") or [],
         source_dir=args.get("source_dir"),
-        wake_backend=args.get("wake_backend", "noop"),
+        wake_backend=args.get("wake_backend", "auto"),
         session_id=args.get("session_id"),
         continuation_prompt=args.get("continuation_prompt"),
         wake_command=args.get("wake_command"),
@@ -147,7 +147,7 @@ TOOLS = [
         "name": "runrelay_submit_experiment",
         "title": "Submit RunRelay experiment",
         "description": "Submit a detached local or SSH experiment. Use only when the user explicitly asked to run the specified command; confirm=true is required.",
-        "inputSchema": _schema({**COMMON_HOME, "host": {"type": "string", "description": "local or an SSH config alias."}, "workdir": {"type": "string"}, "command": {"type": "string"}, "name": {"type": "string"}, "artifacts": {"type": "array", "items": {"type": "string"}}, "source_dir": {"type": "string"}, "wake_backend": {"type": "string", "enum": ["noop", "file", "command", "codex-cli"]}, "session_id": {"type": "string"}, "continuation_prompt": {"type": "string"}, "wake_command": {"type": "string"}, "confirm": {"type": "boolean"}}, ["host", "workdir", "command", "confirm"]),
+        "inputSchema": _schema({**COMMON_HOME, "host": {"type": "string", "description": "local or an SSH config alias."}, "workdir": {"type": "string"}, "command": {"type": "string"}, "name": {"type": "string"}, "artifacts": {"type": "array", "items": {"type": "string"}}, "source_dir": {"type": "string"}, "wake_backend": {"type": "string", "enum": ["noop", "auto", "file", "command", "codex-cli"]}, "session_id": {"type": "string"}, "continuation_prompt": {"type": "string"}, "wake_command": {"type": "string"}, "confirm": {"type": "boolean"}}, ["host", "workdir", "command", "confirm"]),
         "annotations": {"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False},
     },
     {

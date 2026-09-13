@@ -2,7 +2,7 @@
 
 > Agents should reason when decisions are needed, not while experiments are running.
 
-RunRelay is a local-first experiment sidecar for coding and research agents. It launches a command locally or over SSH, detaches it from the initiating terminal, persists metadata in SQLite, and lets the agent wait for completion without repeatedly polling with model calls.
+RunRelay is a local-first experiment sidecar for coding and research agents. It launches a command locally or over SSH, detaches it from the initiating terminal, starts an independent local monitor, persists metadata in SQLite, and can resume a Codex CLI thread after completion without repeated model polling.
 
 The project is intentionally agent-neutral. Codex integration is included, but the runtime does not require an OpenAI account or send commands and logs to a third party.
 
@@ -15,7 +15,7 @@ The first release supports:
 - local detached jobs and remote Linux jobs through the user's existing ssh configuration;
 - persistent experiment metadata and state reconciliation after a CLI restart;
 - submit, list, status, logs, wait, cancel, daemon run, and a small local dashboard;
-- completion notifications through noop, file, command, and codex-cli wake backends;
+- completion notifications through noop, auto, file, command, and codex-cli wake backends;
 - local Git commit, branch, and dirty-tree capture at submission time.
 
 ## Quick start
@@ -42,17 +42,17 @@ The remote job is stored below ~/.runrelay/jobs/<experiment-id> on the remote ho
 
 ## Codex completion wake-up
 
-The safe default is noop: completion is reported by runrelay wait, and no agent is started automatically. To resume a local Codex CLI session after completion:
+The terminal CLI keeps `noop` as its safe default. The Codex MCP adapter uses `auto`: it captures the current Codex thread/session ID and resumes that persisted local CLI thread when the experiment completes. The monitor is started automatically at submission time:
 
     runrelay submit \
       --host gpu-183 \
       --workdir /home/user/project \
       --command "python train.py" \
-      --wake-backend codex-cli \
+      --wake-backend auto \
       --session <codex-thread-id> \
       --continuation-prompt "Experiment completed. Inspect the results and continue the research plan."
 
-Read docs/codex-integration.md before enabling automated wake-up. RunRelay does not claim that it can directly wake an arbitrary open Desktop conversation.
+Read docs/codex-integration.md before enabling automated wake-up. This resumes a local Codex CLI thread; it does not claim to inject a message into an arbitrary open Desktop or SSH remote-project conversation.
 
 ## Codex plugin
 

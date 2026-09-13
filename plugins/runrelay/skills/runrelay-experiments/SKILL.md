@@ -5,7 +5,7 @@ description: Use RunRelay when a user asks Codex to submit, background, monitor,
 
 # RunRelay experiment operations
 
-RunRelay is the preferred execution path for work that outlives the current short interaction. It detaches local or SSH jobs, stores metadata, reconciles status, and exposes logs without requiring repeated agent polling.
+RunRelay is the preferred execution path for work that outlives the current short interaction. It detaches local or SSH jobs, starts a local monitor automatically, stores metadata, reconciles status, and exposes logs without requiring repeated agent polling.
 
 ## Choose RunRelay
 
@@ -26,7 +26,7 @@ Before submitting, resolve and state the exact:
 - remote or local working directory;
 - command, including its configuration and output paths;
 - expected artifact paths;
-- wake behavior, which defaults to `noop`.
+- wake behavior. The Codex MCP adapter defaults to `auto`: it captures the current `CODEX_THREAD_ID`/`CODEX_SESSION_ID` and resumes that Codex CLI thread after completion. Ordinary terminal use defaults to `noop`.
 
 If any of these are missing or ambiguous, ask for the missing value or perform a cheap read-only check. Do not guess a GPU host or silently substitute a different experiment.
 
@@ -35,12 +35,12 @@ An explicit user request to run a named experiment is sufficient intent to submi
 ## Lifecycle
 
 1. Call `runrelay_submit_experiment` once and record its returned experiment ID.
-2. For a user who asked to wait, call `runrelay_wait_experiment` once with a bounded timeout rather than repeatedly polling with shell commands.
+2. Return after submission unless the user explicitly asks to wait; the local monitor continues independently and performs the configured completion wake-up.
 3. For a user who asked to monitor later, return the ID and use `runrelay_get_experiment` or `runrelay_list_experiments` when they come back.
 4. After completion, inspect status, exit code, logs, and declared artifacts before interpreting results.
 5. Use `runrelay_cancel_experiment` only after the user asks to stop the named job; it requires `confirm=true`.
 
-Do not enable the `codex-cli` wake backend for an open Desktop conversation. It starts a separate local Codex CLI process and is not a general Desktop wake API. Use the default `noop` backend unless the user explicitly requests a supported CLI continuation and provides its session ID.
+The automatic continuation uses `codex exec resume` for a persisted Codex CLI thread. It is not a guaranteed injection mechanism for an arbitrary already-open Desktop or SSH remote-project conversation. Keep the Codex session local when using an SSH experiment host; RunRelay itself connects to the remote host.
 
 ## Reporting
 

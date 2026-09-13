@@ -74,8 +74,11 @@ class CodexCliResumeWake:
         if not experiment.session_id:
             raise RuntimeError("codex-cli wake backend requires session_id")
         prompt = experiment.continuation_prompt or (
-            f"Experiment {experiment.id} finished with status {experiment.status.value} "
-            f"and exit code {experiment.exit_code}. Inspect the results and continue."
+            f"RunRelay experiment {experiment.id} finished.\n"
+            f"Status: {experiment.status.value}; exit code: {experiment.exit_code}.\n"
+            f"Host: {experiment.host}; workdir: {experiment.workdir}.\n"
+            f"Local RunRelay state and logs: {experiment.local_dir}.\n"
+            "Inspect the experiment status, logs, and declared artifacts, then continue the plan."
         )
         result = subprocess.run(
             ["codex", "exec", "resume", experiment.session_id, prompt, "--json"],
@@ -105,4 +108,3 @@ def make_wake_backend(experiment: Experiment) -> WakeBackend:
     if experiment.wake_backend == "codex-cli":
         return CodexCliResumeWake()
     raise ValueError(f"Unknown wake backend: {experiment.wake_backend}")
-

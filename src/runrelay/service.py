@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from datetime import datetime, timezone
@@ -7,6 +8,7 @@ from pathlib import Path
 
 from .executor import ExecutorError, LocalExecutor, SSHExecutor
 from .git import capture
+from .monitor import ensure_daemon, remove_daemon_pid, write_daemon_pid
 from .models import Experiment, Status, TERMINAL_STATUSES
 from .storage import Storage
 from .wake import make_wake_backend
@@ -17,8 +19,9 @@ def now() -> str:
 
 
 class RunRelayService:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, *, auto_monitor: bool = True):
         self.root = root
+        self.auto_monitor = auto_monitor
         self.storage = Storage(root)
         self.local = LocalExecutor()
         self.ssh = SSHExecutor()
@@ -40,6 +43,11 @@ class RunRelayService:
         continuation_prompt: str | None = None,
         wake_command: str | None = None,
     ) -> Experiment:
+        if wake_backend == "auto":
+            session_id = session_id or os.environ.get("CODEX_THREAD_ID") or os.environ.get(
+                "CODEX_SESSION_ID"
+            )
+            wake_backend = "codex-cli" if session_id else "noop"
         if wake_backend == "codex-cli" and not session_id:
             raise ValueError("codex-cli wake backend requires --session")
         if wake_backend == "command" and not wake_command:
@@ -77,6 +85,13 @@ class RunRelayService:
                 experiment.pid = result
             experiment.status = Status.RUNNING
             experiment.started_at = now()
+            if self.auto_monitor:
+                try:
+                    experiment.monitor_pid = ensure_daemon(self.root)
+                    experiment.monitor_status = "RUNNING"
+                except Exception as exc:
+                    experiment.monitor_status = "FAILED"
+                    experiment.last_error = f"Unable to start local monitor: {exc}"
             self.storage.put(experiment)
         except Exception as exc:
             experiment.status = Status.FAILED
@@ -156,8 +171,14 @@ class RunRelayService:
             time.sleep(max(0.1, interval))
 
     def daemon(self, interval: float = 5.0) -> None:
-        while True:
-            for experiment in self.storage.list():
-                if experiment.status not in TERMINAL_STATUSES:
-                    self.refresh(experiment.id)
-            time.sleep(max(0.1, interval))
+        pid_file = write_daemon_pid(self.root)
+        try:
+            while True:
+                for experiment in self.storage.list():
+                    if experiment.status not in TERMINAL_STATUSES:
+                        self.refresh(experiment.id)
+                time.sleep(max(0.1, interval))
+        except KeyboardInterrupt:
+            return
+        finally:
+            remove_daemon_pid(pid_file)

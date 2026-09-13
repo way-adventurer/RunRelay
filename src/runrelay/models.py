@@ -45,6 +45,8 @@ class Experiment:
     continuation_prompt: str | None = None
     wake_command: str | None = None
     last_error: str | None = None
+    monitor_pid: int | None = None
+    monitor_status: str = "PENDING"
 
     def to_dict(self) -> dict[str, Any]:
         result = dict(self.__dict__)

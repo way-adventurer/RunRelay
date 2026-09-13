@@ -28,7 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
     submit.add_argument("--source-dir")
     submit.add_argument(
         "--wake-backend",
-        choices=["noop", "file", "command", "codex-cli"],
+        choices=["noop", "auto", "file", "command", "codex-cli"],
         default="noop",
     )
     submit.add_argument("--session", dest="session_id")
@@ -145,6 +145,7 @@ def _format_status(item) -> str:
         f"Started: {item.started_at}\n"
         f"Ended: {item.ended_at}\n"
         f"Wake: {item.wake_backend} / {item.wake_status}\n"
+        f"Monitor: {item.monitor_status} (PID {item.monitor_pid})\n"
         f"Git: {item.git_commit or 'n/a'} ({item.git_branch or 'n/a'}) dirty={item.git_dirty}\n"
         f"Error: {item.last_error or 'n/a'}"
     )
@@ -169,4 +170,3 @@ def _show_logs(
         }:
             return
         time.sleep(max(0.1, interval))
-

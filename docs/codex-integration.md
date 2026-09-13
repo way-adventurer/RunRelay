@@ -13,7 +13,7 @@ Audited on 2026-09-12 against the official OpenAI/Codex documentation and the in
 
 ## PARTIALLY VERIFIED
 
-- A local codex exec resume process can be started after an experiment completes, provided the session is available to the same local Codex installation and the user has valid authentication.
+- RunRelay can start a local `codex exec resume` process after an experiment completes. The plugin adapter captures `CODEX_THREAD_ID`/`CODEX_SESSION_ID` when available, so the user does not need to copy the thread ID manually.
 - The Python SDK controls the local Codex App Server, but RunRelay does not bundle or require that optional dependency in the MVP.
 - The exact persistence and cross-client behavior of a thread depends on the local Codex runtime, configuration, and session source.
 
@@ -25,7 +25,7 @@ Audited on 2026-09-12 against the official OpenAI/Codex documentation and the in
 
 ## MVP decision
 
-RunRelay implements codex-cli as an opt-in wake backend using the documented local CLI shape. It does not pretend to implement a Desktop wake API. The default backend is noop; file and command are useful for notification or integration experiments without starting an agent.
+RunRelay implements an `auto` wake backend for the Codex MCP adapter. It resumes a persisted local Codex CLI thread when the host provides a thread/session ID, and falls back to noop when it does not. It does not claim to inject a new message into an arbitrary open Desktop or SSH remote-project conversation. File and command remain useful for notification or custom integrations.
 
 Official references:
 
@@ -33,4 +33,3 @@ Official references:
 - https://learn.chatgpt.com/docs/app-server
 - https://learn.chatgpt.com/docs/non-interactive-mode
 - https://learn.chatgpt.com/docs/hooks
-

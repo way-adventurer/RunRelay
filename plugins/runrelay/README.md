@@ -2,6 +2,8 @@
 
 This package connects Codex to the local RunRelay experiment sidecar. It provides the `runrelay-experiments` Skill and a local MCP server for submitting, listing, inspecting, waiting for, reading logs from, and cancelling experiments.
 
+When a job is submitted through the Codex MCP adapter, RunRelay starts a detached local monitor automatically. The adapter's default `auto` wake mode records the current Codex thread/session ID and resumes that persisted local CLI thread after the remote job reaches a terminal state. No model-side polling is required.
+
 ## Human installation
 
 From the repository root, run:
