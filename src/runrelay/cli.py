@@ -170,3 +170,7 @@ def _show_logs(
         }:
             return
         time.sleep(max(0.1, interval))
+
+
+if __name__ == "__main__":
+    main()

@@ -85,6 +85,10 @@ class RunRelayService:
                 experiment.pid = result
             experiment.status = Status.RUNNING
             experiment.started_at = now()
+            # Persist the PID before the detached monitor can inspect the job.
+            # Otherwise a fast monitor may see STARTING with no PID and mark a
+            # perfectly healthy worker as LOST during this short hand-off.
+            self.storage.put(experiment)
             if self.auto_monitor:
                 try:
                     experiment.monitor_pid = ensure_daemon(self.root)
