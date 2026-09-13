@@ -35,6 +35,24 @@ def build_parser() -> argparse.ArgumentParser:
     submit.add_argument("--continuation-prompt")
     submit.add_argument("--wake-command")
 
+    watch = sub.add_parser("watch", help="Watch an already-running process")
+    watch.add_argument("--host", default="local")
+    watch.add_argument("--workdir", default=".")
+    watch.add_argument("--pid", type=int, required=True)
+    watch.add_argument("--command", default="attached process")
+    watch.add_argument("--name")
+    watch.add_argument("--stdout-path")
+    watch.add_argument("--stderr-path")
+    watch.add_argument("--source-dir")
+    watch.add_argument(
+        "--wake-backend",
+        choices=["noop", "auto", "file", "command", "codex-cli"],
+        default="noop",
+    )
+    watch.add_argument("--session", dest="session_id")
+    watch.add_argument("--continuation-prompt")
+    watch.add_argument("--wake-command")
+
     list_parser = sub.add_parser("list", help="List experiments")
     list_parser.add_argument("--json", action="store_true")
 
@@ -99,6 +117,36 @@ def main(argv: list[str] | None = None) -> None:
                 f"State: {experiment.local_dir}"
             )
             print("\nYou may safely stop polling this experiment.")
+            return
+        if args.action == "watch":
+            workdir = (
+                str(Path(args.workdir).expanduser().resolve())
+                if args.host == "local"
+                else args.workdir
+            )
+            experiment = service.watch(
+                host=args.host,
+                workdir=workdir,
+                pid=args.pid,
+                command=args.command,
+                name=args.name,
+                stdout_path=args.stdout_path,
+                stderr_path=args.stderr_path,
+                source_dir=args.source_dir,
+                wake_backend=args.wake_backend,
+                session_id=args.session_id,
+                continuation_prompt=args.continuation_prompt,
+                wake_command=args.wake_command,
+            )
+            print(
+                "Process watch registered\n\n"
+                f"ID: {experiment.id}\n"
+                f"Host: {experiment.host}\n"
+                f"PID: {experiment.pid}\n"
+                f"Status: {experiment.status.value}\n"
+                f"State: {experiment.local_dir}"
+            )
+            print("\nYou may safely stop polling this process.")
             return
         if args.action == "list":
             items = service.list()

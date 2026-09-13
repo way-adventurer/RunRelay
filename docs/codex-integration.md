@@ -27,6 +27,12 @@ Audited on 2026-09-12 against the official OpenAI/Codex documentation and the in
 
 RunRelay implements an `auto` wake backend for the Codex MCP adapter. It resumes a persisted local Codex CLI thread when the host provides a thread/session ID, and falls back to noop when it does not. It does not claim to inject a new message into an arbitrary open Desktop or SSH remote-project conversation. File and command remain useful for notification or custom integrations.
 
+The MCP adapter supports two handoff paths: `runrelay_submit_experiment` launches a detached job,
+while `runrelay_watch_process` registers a PID that ARIS or another tool has already launched. In
+both cases the tool returns immediately; the local daemon reconciles the process independently. An
+attached PID can be marked completed when it disappears, but its exit code is not knowable unless
+the producer writes a durable result or exit marker.
+
 Official references:
 
 - https://learn.chatgpt.com/docs/codex-sdk

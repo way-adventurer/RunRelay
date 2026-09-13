@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "runrelay",
+      "name": "dreamkeeper",
       "source": {
         "source": "local",
-        "path": "./plugins/runrelay"
+        "path": "./plugins/dreamkeeper"
       },
       "policy": {
         "installation": "AVAILABLE",

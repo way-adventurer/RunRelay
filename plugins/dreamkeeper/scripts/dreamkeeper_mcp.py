@@ -1,4 +1,4 @@
-"""Small dependency-free MCP stdio adapter for the RunRelay CLI/service.
+"""Small dependency-free MCP stdio adapter for the Dreamkeeper plugin.
 
 The plugin keeps the MCP surface narrow: read operations are available for
 inspection, while submit and cancel require an explicit ``confirm`` input and
@@ -97,6 +97,26 @@ def _submit(args: dict[str, Any]) -> dict[str, Any]:
     return _result(value, f"Submitted RunRelay experiment {item.id}.\n{json.dumps(value, ensure_ascii=False, indent=2)}")
 
 
+def _watch(args: dict[str, Any]) -> dict[str, Any]:
+    service = _service(args.get("home"))
+    item = service.watch(
+        host=args["host"],
+        workdir=args["workdir"],
+        pid=int(args["pid"]),
+        command=args.get("command", "attached process"),
+        name=args.get("name"),
+        stdout_path=args.get("stdout_path"),
+        stderr_path=args.get("stderr_path"),
+        source_dir=args.get("source_dir"),
+        wake_backend=args.get("wake_backend", "auto"),
+        session_id=args.get("session_id"),
+        continuation_prompt=args.get("continuation_prompt"),
+        wake_command=args.get("wake_command"),
+    )
+    value = _item(item)
+    return _result(value, f"Registered RunRelay process watch {item.id}.\n{json.dumps(value, ensure_ascii=False, indent=2)}")
+
+
 def _wait(args: dict[str, Any]) -> dict[str, Any]:
     interval = max(0.2, min(float(args.get("interval", 5)), 60))
     timeout = args.get("timeout")
@@ -158,6 +178,13 @@ TOOLS = [
         "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
     },
     {
+        "name": "runrelay_watch_process",
+        "title": "Watch an existing process",
+        "description": "Register an already-running local or SSH process by PID. The local monitor detects when it ends and can resume the originating Codex CLI thread without model-side polling.",
+        "inputSchema": _schema({**COMMON_HOME, "host": {"type": "string", "description": "local or an SSH config alias."}, "workdir": {"type": "string"}, "pid": {"type": "integer", "minimum": 1}, "command": {"type": "string", "description": "Optional command summary for reporting."}, "name": {"type": "string"}, "stdout_path": {"type": "string"}, "stderr_path": {"type": "string"}, "source_dir": {"type": "string"}, "wake_backend": {"type": "string", "enum": ["noop", "auto", "file", "command", "codex-cli"]}, "session_id": {"type": "string"}, "continuation_prompt": {"type": "string"}, "wake_command": {"type": "string"}}, ["host", "workdir", "pid"]),
+        "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+    },
+    {
         "name": "runrelay_get_logs",
         "title": "Read RunRelay logs",
         "description": "Read bounded stdout and stderr for a RunRelay experiment after or during execution.",
@@ -178,6 +205,7 @@ HANDLERS = {
     "runrelay_list_experiments": _list,
     "runrelay_get_experiment": _get,
     "runrelay_submit_experiment": _submit,
+    "runrelay_watch_process": _watch,
     "runrelay_wait_experiment": _wait,
     "runrelay_get_logs": _logs,
     "runrelay_cancel_experiment": _cancel,
@@ -203,7 +231,7 @@ def main() -> int:
             method = request.get("method")
             request_id = request.get("id")
             if method == "initialize":
-                _send({"jsonrpc": "2.0", "id": request_id, "result": {"protocolVersion": "2025-06-18", "capabilities": {"tools": {}}, "serverInfo": {"name": "runrelay", "version": "0.1.0"}, "instructions": instructions}})
+                _send({"jsonrpc": "2.0", "id": request_id, "result": {"protocolVersion": "2025-06-18", "capabilities": {"tools": {}}, "serverInfo": {"name": "dreamkeeper", "version": "0.1.0"}, "instructions": instructions}})
             elif method == "tools/list":
                 _send({"jsonrpc": "2.0", "id": request_id, "result": {"tools": TOOLS}})
             elif method == "tools/call":

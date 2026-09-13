@@ -47,6 +47,9 @@ class Experiment:
     last_error: str | None = None
     monitor_pid: int | None = None
     monitor_status: str = "PENDING"
+    attached: bool = False
+    stdout_path: str | None = None
+    stderr_path: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         result = dict(self.__dict__)

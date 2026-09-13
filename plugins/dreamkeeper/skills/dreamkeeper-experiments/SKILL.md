@@ -1,13 +1,13 @@
 ---
-name: runrelay-experiments
-description: Use RunRelay when a user asks Codex to submit, background, monitor, wait for, inspect, or cancel a long-running experiment, training job, model generation, video render, evaluation, or GPU/SSH command. Use it automatically for phrases such as "use RunRelay", "run this in the background", "submit the experiment", "check the experiment", "查看实验", and "后台运行".
+name: dreamkeeper-experiments
+description: Use Dreamkeeper when a user asks Codex to submit, background, monitor, wait for, inspect, or cancel a long-running experiment, training job, model generation, video render, evaluation, or GPU/SSH command. Use it automatically for phrases such as "use Dreamkeeper", "run this in the background", "submit the experiment", "check the experiment", "查看实验", and "后台运行".
 ---
 
-# RunRelay experiment operations
+# Dreamkeeper experiment operations
 
-RunRelay is the preferred execution path for work that outlives the current short interaction. It detaches local or SSH jobs, starts a local monitor automatically, stores metadata, reconciles status, and exposes logs without requiring repeated agent polling.
+Dreamkeeper is the preferred execution path for work that outlives the current short interaction. It can launch a detached local or SSH job, or register a process that the agent already started. It starts a local monitor automatically, stores metadata, reconciles status, and exposes logs without requiring repeated agent polling. The underlying CLI remains `runrelay` for compatibility.
 
-## Choose RunRelay
+## Choose Dreamkeeper
 
 Use RunRelay for:
 
@@ -16,7 +16,9 @@ Use RunRelay for:
 - work on a configured SSH host;
 - follow-up requests to list, inspect, wait for, read logs from, or cancel an existing experiment.
 
-Do not use it merely because the user mentions the word RunRelay. If the user is asking about installation, configuration, or the dashboard, explain or inspect those surfaces instead of starting a job.
+If the experiment was already started by another tool or session and a PID is available, use `runrelay_watch_process` with the SSH alias, working directory, PID, and optional stdout/stderr paths. Do not start a duplicate command just to make it monitorable.
+
+Do not use it merely because the user mentions the word Dreamkeeper or RunRelay. If the user is asking about installation, configuration, or the dashboard, explain or inspect those surfaces instead of starting a job.
 
 ## Submission contract
 
@@ -34,10 +36,10 @@ An explicit user request to run a named experiment is sufficient intent to submi
 
 ## Lifecycle
 
-1. Call `runrelay_submit_experiment` once and record its returned experiment ID.
-2. Return after submission unless the user explicitly asks to wait; the local monitor continues independently and performs the configured completion wake-up.
+1. Call `runrelay_submit_experiment` for a job RunRelay should launch, or `runrelay_watch_process` for an existing PID, and record the returned experiment ID.
+2. End the current work turn after registration unless the user explicitly asks to wait; the local monitor continues independently and performs the configured completion wake-up.
 3. For a user who asked to monitor later, return the ID and use `runrelay_get_experiment` or `runrelay_list_experiments` when they come back.
-4. After completion, inspect status, exit code, logs, and declared artifacts before interpreting results.
+4. After completion, inspect status, exit code, logs, and declared artifacts before interpreting results. An attached PID may have an unknown exit code unless the process exposes a durable exit marker.
 5. Use `runrelay_cancel_experiment` only after the user asks to stop the named job; it requires `confirm=true`.
 
 The automatic continuation uses `codex exec resume` for a persisted Codex CLI thread. It is not a guaranteed injection mechanism for an arbitrary already-open Desktop or SSH remote-project conversation. Keep the Codex session local when using an SSH experiment host; RunRelay itself connects to the remote host.

@@ -1,8 +1,14 @@
-# RunRelay Codex plugin
+# 守梦 · Dreamkeeper Codex plugin
 
-This package connects Codex to the local RunRelay experiment sidecar. It provides the `runrelay-experiments` Skill and a local MCP server for submitting, listing, inspecting, waiting for, reading logs from, and cancelling experiments.
+This package connects Codex to the local RunRelay experiment sidecar under the user-facing name 守梦 · Dreamkeeper. It provides the `dreamkeeper-experiments` Skill and a local MCP server for submitting, registering existing PIDs, listing, inspecting, waiting for, reading logs from, and cancelling experiments. The underlying CLI and MCP tool names remain `runrelay_*` for compatibility.
 
 When a job is submitted through the Codex MCP adapter, RunRelay starts a detached local monitor automatically. The adapter's default `auto` wake mode records the current Codex thread/session ID and resumes that persisted local CLI thread after the remote job reaches a terminal state. No model-side polling is required.
+
+If ARIS or another tool has already launched the process, register it instead of launching it again:
+
+    Use RunRelay to watch PID 183729 on gpu-183 in /home/user/project. The command is `python train.py --config configs/a.yaml`; stdout is /home/user/project/train.out and stderr is /home/user/project/train.err. Resume this Codex thread when it ends.
+
+The process-watch path records completion when the PID disappears. An attached process's exit code is unknown unless the producer writes a durable exit marker.
 
 ## Human installation
 
@@ -10,13 +16,13 @@ From the repository root, run:
 
     python -m pip install -e .
     codex plugin marketplace add .
-    codex plugin add runrelay --marketplace personal
+    codex plugin add dreamkeeper --marketplace personal
 
 Verify the installation:
 
     codex plugin list
 
-Confirm that `runrelay@personal` is installed and enabled, then start a new Codex chat before testing the plugin.
+Confirm that `dreamkeeper@personal` is installed and enabled, then start a new Codex chat before testing the plugin.
 
 ## SSH host scope
 
@@ -30,10 +36,10 @@ A Codex SSH remote-project chat runs with the remote host's own skills, MCP serv
 
 The following prompt asks Codex to install and verify the plugin without starting an experiment:
 
-    Install the RunRelay Codex plugin from the current repository.
-    Confirm that the current directory is the repository root and that plugins/runrelay and .agents/plugins/marketplace.json exist.
-    Run `python -m pip install -e .`, then run `codex plugin marketplace add .`, then run `codex plugin add runrelay --marketplace personal`.
-    Run `codex plugin list` and confirm that runrelay@personal is installed and enabled.
+    Install the 守梦 / Dreamkeeper Codex plugin from the current repository.
+    Confirm that the current directory is the repository root and that plugins/dreamkeeper and .agents/plugins/marketplace.json exist.
+    Run `python -m pip install -e .`, then run `codex plugin marketplace add .`, then run `codex plugin add dreamkeeper --marketplace personal`.
+    Run `codex plugin list` and confirm that dreamkeeper@personal is installed and enabled.
     Do not submit, start, or cancel any experiment. Report the installation result and remind me to start a new Codex chat before testing.
 
 ## Test prompt

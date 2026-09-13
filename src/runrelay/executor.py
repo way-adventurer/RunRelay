@@ -54,6 +54,10 @@ class LocalExecutor:
         return process.pid
 
     def status(self, experiment: Experiment) -> RemoteState:
+        if experiment.attached:
+            if experiment.pid and _pid_alive(experiment.pid):
+                return RemoteState(Status.RUNNING, pid=experiment.pid)
+            return RemoteState(Status.COMPLETED, pid=experiment.pid)
         directory = Path(experiment.local_dir)
         exit_file = directory / "exit_code"
         cancelled = directory / "cancelled"
@@ -89,6 +93,8 @@ class LocalExecutor:
                 pass
 
     def logs(self, experiment: Experiment) -> tuple[str, str]:
+        if experiment.attached:
+            return _read_file(Path(experiment.stdout_path)) if experiment.stdout_path else "", _read_file(Path(experiment.stderr_path)) if experiment.stderr_path else ""
         directory = Path(experiment.local_dir)
         return _read_file(directory / "stdout.log"), _read_file(directory / "stderr.log")
 
@@ -164,6 +170,25 @@ printf '%s\n' "$pid"
         return pid, job
 
     def status(self, experiment: Experiment) -> RemoteState:
+        if experiment.attached:
+            script = f"""set -eu
+if kill -0 {int(experiment.pid or 0)} 2>/dev/null; then
+  printf 'RUNNING:%s\\n' {int(experiment.pid or 0)}
+else
+  echo COMPLETED
+fi
+"""
+            result = self._ssh(experiment, script, check=False)
+            if result.returncode != 0:
+                return RemoteState(
+                    Status.RUNNING,
+                    pid=experiment.pid,
+                    detail=result.stderr.strip() or "Unable to inspect attached process; will retry",
+                )
+            line = result.stdout.strip().splitlines()[-1] if result.stdout.strip() else "COMPLETED"
+            if line.startswith("RUNNING:"):
+                return RemoteState(Status.RUNNING, pid=experiment.pid)
+            return RemoteState(Status.COMPLETED, pid=experiment.pid)
         job = f"$HOME/.runrelay/jobs/{experiment.id}"
         script = f"""set -eu
 job="{job}"
@@ -199,6 +224,20 @@ if [ -f "$job/pid" ]; then kill -TERM "$(cat "$job/pid")" 2>/dev/null || true; f
         self._ssh(experiment, script)
 
     def logs(self, experiment: Experiment) -> tuple[str, str]:
+        if experiment.attached:
+            stdout_path = experiment.stdout_path or "/dev/null"
+            stderr_path = experiment.stderr_path or "/dev/null"
+            script = f"""set +e
+printf 'STDOUT\\0'
+cat -- {shlex.quote(stdout_path)} 2>/dev/null || true
+printf '\\0STDERR\\0'
+cat -- {shlex.quote(stderr_path)} 2>/dev/null || true
+"""
+            result = self._ssh(experiment, script, check=False)
+            if result.returncode != 0:
+                raise ExecutorError(result.stderr.strip() or "Unable to read attached process logs")
+            raw = result.stdout.split("\0")
+            return (raw[1] if len(raw) > 1 else "", raw[3] if len(raw) > 3 else "")
         job = f"$HOME/.runrelay/jobs/{experiment.id}"
         script = f"""set +e
 job="{job}"
@@ -224,6 +263,21 @@ def _read_file(path: Path) -> str:
 
 
 def _pid_alive(pid: int) -> bool:
+    if os.name == "nt":
+        import ctypes
+
+        synchronize = 0x00100000
+        query_limited_information = 0x1000
+        wait_timeout = 0x00000102
+        handle = ctypes.windll.kernel32.OpenProcess(
+            synchronize | query_limited_information, False, pid
+        )
+        if not handle:
+            return False
+        try:
+            return ctypes.windll.kernel32.WaitForSingleObject(handle, 0) == wait_timeout
+        finally:
+            ctypes.windll.kernel32.CloseHandle(handle)
     try:
         os.kill(pid, 0)
     except OSError:

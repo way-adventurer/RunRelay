@@ -105,6 +105,71 @@ class RunRelayService:
             raise
         return experiment
 
+    def watch(
+        self,
+        *,
+        host: str,
+        workdir: str,
+        pid: int,
+        command: str = "attached process",
+        name: str | None = None,
+        stdout_path: str | None = None,
+        stderr_path: str | None = None,
+        source_dir: str | None = None,
+        wake_backend: str = "noop",
+        session_id: str | None = None,
+        continuation_prompt: str | None = None,
+        wake_command: str | None = None,
+    ) -> Experiment:
+        if pid <= 0:
+            raise ValueError("pid must be a positive integer")
+        if wake_backend == "auto":
+            session_id = session_id or os.environ.get("CODEX_THREAD_ID") or os.environ.get(
+                "CODEX_SESSION_ID"
+            )
+            wake_backend = "codex-cli" if session_id else "noop"
+        if wake_backend == "codex-cli" and not session_id:
+            raise ValueError("codex-cli wake backend requires --session")
+        if wake_backend == "command" and not wake_command:
+            raise ValueError("command wake backend requires --wake-command")
+        experiment_id = (
+            f"exp_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+        )
+        local_dir = self.root / "experiments" / experiment_id
+        experiment = Experiment(
+            id=experiment_id,
+            name=name,
+            host=host,
+            workdir=workdir,
+            command=command,
+            status=Status.RUNNING,
+            created_at=now(),
+            started_at=now(),
+            pid=pid,
+            local_dir=str(local_dir),
+            remote_dir=None,
+            artifacts=[],
+            wake_backend=wake_backend,
+            session_id=session_id,
+            continuation_prompt=continuation_prompt,
+            wake_command=wake_command,
+            attached=True,
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            **capture(source_dir or Path.cwd()),
+        )
+        local_dir.mkdir(parents=True, exist_ok=True)
+        self.storage.put(experiment)
+        if self.auto_monitor:
+            try:
+                experiment.monitor_pid = ensure_daemon(self.root)
+                experiment.monitor_status = "RUNNING"
+            except Exception as exc:
+                experiment.monitor_status = "FAILED"
+                experiment.last_error = f"Unable to start local monitor: {exc}"
+        self.storage.put(experiment)
+        return experiment
+
     def get(self, experiment_id: str) -> Experiment:
         experiment = self.storage.get(experiment_id)
         if not experiment:

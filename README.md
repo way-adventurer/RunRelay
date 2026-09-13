@@ -13,6 +13,7 @@ The project is intentionally agent-neutral. Codex integration is included, but t
 The first release supports:
 
 - local detached jobs and remote Linux jobs through the user's existing ssh configuration;
+- registering an already-running local or SSH PID so an agent can stop working immediately after launch;
 - persistent experiment metadata and state reconciliation after a CLI restart;
 - submit, list, status, logs, wait, cancel, daemon run, and a small local dashboard;
 - completion notifications through noop, auto, file, command, and codex-cli wake backends;
@@ -38,6 +39,19 @@ For a remote host already configured in ~/.ssh/config:
     runrelay status <experiment-id>
     runrelay wait <experiment-id>
 
+For a process already started by ARIS or another tool:
+
+    runrelay watch \
+      --host gpu-183 \
+      --workdir /home/user/project \
+      --pid 183729 \
+      --command "python train.py --config configs/a.yaml" \
+      --stdout-path /home/user/project/train.out \
+      --stderr-path /home/user/project/train.err
+
+The local monitor records completion when the PID ends. For an attached process, the exit code is
+unknown unless the producer exposes a durable exit marker.
+
 The remote job is stored below ~/.runrelay/jobs/<experiment-id> on the remote host. SSH passwords and private keys are never stored by RunRelay.
 
 ## Codex completion wake-up
@@ -56,7 +70,7 @@ Read docs/codex-integration.md before enabling automated wake-up. This resumes a
 
 ## Codex plugin
 
-RunRelay includes an installable Codex plugin under `plugins/runrelay`. It adds a Skill that tells Codex when to use RunRelay and a local MCP server with structured tools for submit, list, status, wait, logs, and cancel.
+The repository includes an installable Codex plugin named 守梦 · Dreamkeeper under `plugins/dreamkeeper`. It tells Codex when to use the RunRelay runtime and provides a local MCP server with structured tools for submit, watch, list, status, wait, logs, and cancel.
 
 ### 人工安装
 
@@ -64,9 +78,9 @@ RunRelay includes an installable Codex plugin under `plugins/runrelay`. It adds 
 
     python -m pip install -e .
     codex plugin marketplace add .
-    codex plugin add runrelay --marketplace personal
+    codex plugin add dreamkeeper --marketplace personal
 
-然后执行 `codex plugin list`，确认 `runrelay@personal` 已安装并启用。安装完成后请新开一个 Codex 会话；插件提供的 Skill 和 MCP 工具会在新会话中生效。
+然后执行 `codex plugin list`，确认 `dreamkeeper@personal` 已安装并启用。安装完成后请新开一个 Codex 会话；插件提供的 Skill 和 MCP 工具会在新会话中生效。
 
 可以用下面这句话测试：
 
@@ -86,11 +100,11 @@ RunRelay includes an installable Codex plugin under `plugins/runrelay`. It adds 
 
     请把当前仓库里的 RunRelay Codex 插件安装到本机 Codex，并完成安装验证。
 
-    1. 确认当前目录是本机 RunRelay 仓库根目录，并且存在 plugins/runrelay 和 .agents/plugins/marketplace.json。
+    1. 确认当前目录是本机 RunRelay 仓库根目录，并且存在 plugins/dreamkeeper 和 .agents/plugins/marketplace.json。
     2. 执行：python -m pip install -e .
     3. 执行：codex plugin marketplace add .
-    4. 执行：codex plugin add runrelay --marketplace personal
-    5. 执行：codex plugin list，确认 runrelay@personal 的 installed=true 且 enabled=true。
+    4. 执行：codex plugin add dreamkeeper --marketplace personal
+    5. 执行：codex plugin list，确认 dreamkeeper@personal 的 installed=true 且 enabled=true。
     6. 只验证插件安装、Skill 和 MCP 入口，不要提交、启动或取消任何实验。
     7. 返回安装结果；如果安装成功，提醒我新开一个“本机 Codex 会话”，再用 host 参数测试远程任务。
 

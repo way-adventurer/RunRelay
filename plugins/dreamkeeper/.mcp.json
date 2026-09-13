@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "runrelay": {
+    "dreamkeeper": {
       "command": "python",
-      "args": ["./scripts/runrelay_mcp.py"],
+      "args": ["./scripts/dreamkeeper_mcp.py"],
       "cwd": ".",
       "enabled": true,
       "default_tools_approval_mode": "prompt",

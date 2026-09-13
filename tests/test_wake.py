@@ -35,3 +35,17 @@ def test_codex_cli_wake_resumes_saved_thread(monkeypatch, tmp_path):
     assert captured["args"][:4] == ["codex", "exec", "resume", "thread-123"]
     assert "RunRelay experiment exp_wake finished" in captured["args"][4]
     assert (tmp_path / "codex-wake.jsonl").read_text(encoding="utf-8").strip()
+
+
+def test_watch_tool_is_exposed():
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).parents[1] / "plugins" / "dreamkeeper" / "scripts" / "dreamkeeper_mcp.py"
+    spec = importlib.util.spec_from_file_location("runrelay_mcp", path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(module)
+
+    tool = next(tool for tool in module.TOOLS if tool["name"] == "runrelay_watch_process")
+    assert tool["inputSchema"]["required"] == ["host", "workdir", "pid"]
